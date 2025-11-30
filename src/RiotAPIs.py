@@ -1,6 +1,7 @@
 import requests
 import textwrap
 
+
 class API:
     BASE = "https://ddragon.leagueoflegends.com/cdn"
     VERSIONS_URL = "https://ddragon.leagueoflegends.com/api/versions.json"
@@ -37,7 +38,7 @@ class API:
         """
         Get full data for a champion (e.g. 'Amumu').
 
-        Returns the inner Amumu object, not the outer wrapper.
+        Returns the inner champ object, not the outer wrapper.
         """
         data = self._get_json(f"champion/{champ}.json")
         return data["data"][champ]
@@ -59,18 +60,17 @@ class API:
         items = self.all_items()
         key = str(item_id)
         return items.get(key)
-    
+
     def item_by_name(self, item: str):
-
+        """
+        Convenience: search by item name.
+        """
         items = self.all_items()
-        print("Number of items:", len(items))
-
-        # Print first 20 item names to see what's there
-        for i, (item_id, data) in enumerate(items.items()):
+        for item_id, data in items.items():
             if data.get("name") == item:
                 return self.item_by_id(item_id)
         return None
-        
+
     def pretty_item(self, item_data: dict, item_id: str | int | None = None):
         """
         Nicely print a single item dict from Data Dragon.
@@ -78,9 +78,6 @@ class API:
         Example:
             item = client.item_by_name("Doran's Shield")
             client.pretty_item(item)
-
-        Or:
-            client.pretty_item_by_id(1054)
         """
         if item_data is None:
             print("Item not found.")
@@ -126,5 +123,21 @@ class API:
         print(desc_clean)
         print("=" * 60)
 
-        
+    # ------------------ Summoner Spells (for Smite) ------------------ #
 
+    def all_summoner_spells(self):
+        """
+        Get dict of all summoner spells, keyed by spell ID.
+        """
+        data = self._get_json("summoner.json")
+        return data["data"]
+
+    def summoner_spell_by_name(self, name: str):
+        """
+        Convenience: get summoner spell by displayed name (e.g. 'Smite').
+        """
+        spells = self.all_summoner_spells()
+        for spell_id, spell_data in spells.items():
+            if spell_data.get("name") == name:
+                return spell_data
+        return None
