@@ -1,0 +1,93 @@
+{
+  "description": "Top macro-focused pro junglers from different regions for data collection",
+  "junglers": [
+    {
+      "name": "Canyon",
+      "team": "Gen.G",
+      "region": "kr",
+      "playstyle": "Calculated aggression, excellent pathing, objective control",
+      "notes": "World champion, best jungler globally"
+    },
+    {
+      "name": "Oner",
+      "team": "T1",
+      "region": "kr",
+      "playstyle": "Aggressive early game, team-fight focused",
+      "notes": "World champion with Faker"
+    },
+    {
+      "name": "Peanut",
+      "team": "HLE",
+      "region": "kr",
+      "playstyle": "Creative pathing, counter-jungling master",
+      "notes": "Veteran with unique style"
+    },
+    {
+      "name": "Jankos",
+      "team": "Retired/Streaming",
+      "region": "euw1",
+      "playstyle": "Smart macro, vision control, team-oriented",
+      "notes": "European legend, 'First Blood King'"
+    },
+    {
+      "name": "Inspired",
+      "team": "LCS",
+      "region": "na1",
+      "playstyle": "Farm-focused, scaling, late-game teamfights",
+      "notes": "EU import, methodical playstyle"
+    },
+    {
+      "name": "Blaber",
+      "team": "Cloud9",
+      "region": "na1",
+      "playstyle": "Hyper-aggressive, high-risk high-reward",
+      "notes": "NA native, feast-or-famine style"
+    },
+    {
+      "name": "Closer",
+      "team": "LCS",
+      "region": "na1",
+      "playstyle": "Consistent, supportive, objective-focused",
+      "notes": "Turkish import, stable macro"
+    },
+    {
+      "name": "Elyoya",
+      "team": "MAD Lions",
+      "region": "euw1",
+      "playstyle": "Flexible, adapts to meta, strong mechanics",
+      "notes": "Rising EU star"
+    },
+    {
+      "name": "Kanavi",
+      "team": "JD Gaming",
+      "region": "kr",
+      "playstyle": "Farm-efficient, scaling, objective priority",
+      "notes": "LPL powerhouse, consistent performance"
+    },
+    {
+      "name": "Razork",
+      "team": "Fnatic",
+      "region": "euw1",
+      "playstyle": "Aggressive early, lane-focused ganks",
+      "notes": "EU champion"
+    }
+  ],
+  "notes": [
+    "This list includes diverse playstyles:",
+    "- Aggressive (Blaber, Oner)",
+    "- Farm-focused (Inspired, Kanavi)",
+    "- Macro/Vision (Jankos, Closer)",
+    "- Creative/Flexible (Peanut, Elyoya)",
+    "",
+    "Regional distribution:",
+    "- Korea: 4 players",
+    "- EU West: 3 players",
+    "- North America: 3 players",
+    "",
+    "To add more players, edit this file with:",
+    "- name: In-game summoner name (exact spelling)",
+    "- region: kr, euw1, na1, etc.",
+    "- playstyle: For your reference",
+    "- notes: Any additional context"
+  ]
+}

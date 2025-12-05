@@ -32,16 +32,24 @@ class MonstersState:
         "blue_blue":   {"first_spawn": 90.0, "respawn": 150.0},
         "blue_gromp":  {"first_spawn": 90.0, "respawn": 150.0},
         "blue_wolves": {"first_spawn": 90.0, "respawn": 150.0},
+        "blue_raptors": {"first_spawn": 90.0, "respawn": 150.0},
+        "blue_red":    {"first_spawn": 90.0, "respawn": 150.0},
+        "blue_krugs":  {"first_spawn": 90.0, "respawn": 150.0},
 
         # Red side
         "red_red":     {"first_spawn": 90.0, "respawn": 150.0},
         "red_krugs":   {"first_spawn": 90.0, "respawn": 150.0},
         "red_raptors": {"first_spawn": 90.0, "respawn": 150.0},
+        "red_wolves":  {"first_spawn": 90.0, "respawn": 150.0},
+        "red_gromp":   {"first_spawn": 90.0, "respawn": 150.0},
+        "red_blue":    {"first_spawn": 90.0, "respawn": 150.0},
 
         # Neutral objectives (approximate)
         "dragon":      {"first_spawn": 300.0, "respawn": 300.0},   # 5:00
         "herald":      {"first_spawn": 480.0, "respawn": 360.0},   # 8:00
         "baron":       {"first_spawn": 1200.0, "respawn": 360.0},  # 20:00
+        "scuttle_bot": {"first_spawn": 195.0, "respawn": 150.0},   # 3:15
+        "scuttle_top": {"first_spawn": 195.0, "respawn": 150.0},   # 3:15
     })
 
     camp_names: list = field(init=False)
