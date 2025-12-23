@@ -1,49 +1,60 @@
-# League of Legends Jungle RL Project
+# League of Legends Jungle ML Project
 
-Reinforcement Learning agent for League of Legends jungling, focusing on macro decisions and optimal pathing.
+Machine Learning models for League of Legends jungling, trained on high-elo replay data using computer vision and automated screenshot extraction.
 
 ## 🎯 Project Goal
 
-Train an RL agent to make high-level jungling decisions:
+Train ML models to make high-level jungling decisions using **complete game state data** extracted from replays:
 - Optimal jungle pathing and camp clearing
-- Gank timing based on lane states
-- Objective control (Dragon, Herald, Baron)
+- Gank timing based on lane states and fog of war
+- Objective control (Dragon, Herald, Baron, Atakhan, Void Grubs)
 - Gold/XP efficiency optimization
+- Information asymmetry (visible vs. true enemy positions)
 
-**Target Performance**: Gold-Plat level decision making
+**Target Performance**: High-elo decision making using ensemble models
 
 ## 🏗️ Project Status
 
-Currently in **Phase 1: Simulation & Data Collection**
+Currently in **Phase 1: Automated Replay Screenshot Collection Pipeline**
 
 - ✅ Core jungle simulation (camp clearing, HP/damage)
 - ✅ Monster scaling system
 - ✅ Map geometry and travel times
 - ✅ Lane state and gank heuristics
-- 🚧 Data collection pipeline
-- ⏳ RL training environment
-- ⏳ Behavior cloning from high-elo data
-- ⏳ PPO/DQN fine-tuning
+- 🚧 Screenshot-based data collection pipeline
+- 🚧 Computer vision extraction system
+- ⏳ Partition-based training workflow
+- ⏳ Hyperparameter tuning with K-fold CV
+- ⏳ Final model training (XGBoost, Extra Trees, Neural Networks)
 
 ## 📁 Project Structure
 
 ```
 RL-Project/
-├── src/                    # Core simulation code
+├── src/                    # Core simulation & data processing
 │   ├── combatState.py      # Camp clear simulation
 │   ├── monster_scaling.py  # Dynamic monster stats
 │   ├── map_geometry.py     # Travel time calculations
 │   ├── gameStates.py       # Lane states, monster spawns
 │   ├── jungle_env.py       # Environment integration
 │   ├── envSim.py           # Demo simulation
-│   └── RiotAPIs.py         # Riot Data Dragon API client
-├── scripts/                # Utility scripts
-│   └── test_riot_api.py    # API data exploration
+│   ├── RiotAPIs.py         # Riot Data Dragon API client
+│   └── (future) cv_extraction.py  # Computer vision pipeline
+├── scripts/                # Collection & training scripts
+│   ├── collect_replays.py  # Automated replay screenshot collection
+│   ├── process_partition.py # CV extraction for partition
+│   └── train_model.py      # Model training pipeline
 ├── docs/                   # Documentation
-│   └── data_collection_options.md  # Data strategy analysis
+│   ├── data_collection_options.md  # Original data strategy analysis
+│   └── screenshot_pipeline.md      # New CV-based approach
 ├── data/                   # Training data (gitignored)
-│   ├── raw/                # Raw match timelines
-│   └── processed/          # Preprocessed training data
+│   ├── partitions/         # Partition-based collection
+│   │   ├── partition_001/
+│   │   │   ├── raw/        # Screenshots (deleted after processing)
+│   │   │   └── processed/  # Extracted CSV data
+│   │   └── partition_NNN/
+│   ├── models/             # Trained models per partition + final
+│   └── full_dataset.csv    # Merged data from all partitions
 ├── requirements.txt        # Python dependencies
 └── README.md              # This file
 ```
@@ -53,7 +64,10 @@ RL-Project/
 ### Prerequisites
 
 - Python 3.10+
-- League of Legends understanding (jungling knowledge helpful)
+- League of Legends client (for replay collection)
+- League of Legends accounts in target regions (NA, EUW, KR)
+- ~200 GB free disk space (temporary, during partition processing)
+- Understanding of jungling and LoL game mechanics
 
 ### Installation
 
@@ -70,14 +84,17 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### Running the Simulation
+### Running Data Collection
 
 ```bash
-# Test camp clearing mechanics
-python src/jungle_env.py
+# Collect one partition of replays (automated)
+python scripts/collect_partition.py --region NA --partition 1 --games 100
 
-# Test environment simulation
-python src/envSim.py
+# Process partition with computer vision
+python scripts/process_partition.py --partition 1
+
+# Train on completed partitions
+python scripts/train_model.py --partitions 1-5
 ```
 
 ## 🧪 Current Simulation Features
@@ -108,48 +125,92 @@ python src/envSim.py
 
 ## 📊 Data Collection Strategy
 
-See [docs/data_collection_options.md](docs/data_collection_options.md) for detailed analysis.
+**NEW APPROACH**: Screenshot-based automated replay collection with computer vision extraction.
 
-**Current Plan**: Hybrid approach
-1. **Phase 1**: Riot API + inference heuristics for camp clears
-2. **Phase 2**: (If needed) Computer vision on replay recordings for perfect data
+### Why Screenshots Over API?
+- **Complete data**: All visible information (positions, items, gold, HP/mana, cooldowns, fog of war)
+- **Fog of war tracking**: Both true positions and last-known positions
+- **All epic monsters**: Dragon, Baron, Herald, Atakhan, Void Grubs
+- **5-second intervals**: Much better temporal resolution than API (60s)
+- **No API limitations**: Get everything visible on screen
+
+### Collection Pipeline
+1. **Automated replay navigation** (jump backwards in 5s intervals from end)
+2. **Two screenshots per timestamp**:
+   - Image 1: Fog of war ON + Tab (visible enemy positions)
+   - Image 2: Fog of war OFF + Tab + X (true positions + gold data)
+3. **Computer vision extraction**:
+   - Champion positions from minimap (color blob detection)
+   - Items, stats, gold from scoreboard (template matching + OCR)
+   - Epic monster status (visual detection + API correlation)
+   - Health/mana bars, ultimate/summoner cooldowns
+4. **Partition-based processing** (100 games per partition):
+   - Collect → Process → Save CSV → Delete images
+   - Accumulate CSVs across partitions
+   - Train final model on merged dataset
+
+### Storage Efficiency
+- **During partition**: ~180 GB (screenshots, temporary)
+- **After processing**: ~72 MB (CSV per 100 games)
+- **Final dataset**: ~360 MB for 500 games
+- **No cloud storage needed**
+
+See [docs/data_collection_options.md](docs/data_collection_options.md) for original API-based analysis.
 
 ## 🛠️ Tech Stack
 
 - **Simulation**: Python, NumPy
-- **RL Framework**: Stable-Baselines3 (PPO/DQN)
+- **Computer Vision**: OpenCV, pytesseract (OCR)
+- **ML Frameworks**: scikit-learn, XGBoost, LightGBM
 - **Neural Networks**: PyTorch
-- **Data Source**: Riot Games API
-- **Training**: AWS (planned)
+- **Hyperparameter Tuning**: Optuna (Bayesian optimization)
+- **Data Processing**: pandas, NumPy
+- **Automation**: pyautogui, pynput (replay control)
+- **Data Source**: League of Legends replays + Riot API (metadata)
 
 ## 📈 Roadmap
 
-### Phase 1: Data Collection (Current)
-- [ ] Set up Riot API data pipeline
-- [ ] Download 1000+ high-elo match timelines
-- [ ] Build camp inference heuristics
-- [ ] Extract state-action pairs
+### Phase 1: Automated Screenshot Collection (Current)
+- [ ] Build replay navigation automation (pyautogui)
+- [ ] Implement screenshot capture at 5s intervals
+- [ ] Set up fog of war toggle automation
+- [ ] Test on 1-2 replays for validation
+- [ ] Scale to partition-based collection (100 games/partition)
 
-### Phase 2: Environment Setup
-- [ ] Create Gymnasium-compatible environment
-- [ ] Define state space (~1500 dimensions)
-- [ ] Define action space (18 discrete actions)
-- [ ] Implement reward function
+### Phase 2: Computer Vision Pipeline
+- [ ] Champion position detection (minimap blob detection)
+- [ ] Champion identification (portrait template matching)
+- [ ] Item extraction (template matching + OCR)
+- [ ] Gold/stats OCR (scoreboard parsing)
+- [ ] Health/mana bar reading
+- [ ] Ultimate/summoner cooldown detection
+- [ ] Epic monster status tracking
 
-### Phase 3: Behavior Cloning
-- [ ] Train PyTorch network on expert data
-- [ ] Validate imitation accuracy
-- [ ] Establish baseline performance
+### Phase 3: Partition-Based Data Collection
+- [ ] Collect Partition 1 (100 games, ~33 hours)
+- [ ] Process Partition 1 → CSV
+- [ ] Collect & process Partitions 2-5
+- [ ] Merge all partition CSVs
+- [ ] Final dataset: 500 games, ~1.8M training examples
 
-### Phase 4: RL Fine-Tuning
-- [ ] PPO training on top of behavior cloning
-- [ ] Hyperparameter tuning
-- [ ] Evaluation against heuristics
+### Phase 4: Hyperparameter Tuning
+- [ ] Set up Optuna Bayesian optimization
+- [ ] Define search space (NN, XGBoost, Extra Trees)
+- [ ] Run K-fold CV using partition splits
+- [ ] Select best model configurations
 
-### Phase 5: Deployment
-- [ ] AWS training pipeline
-- [ ] Model checkpointing
-- [ ] Performance analysis
+### Phase 5: Final Model Training
+- [ ] Train XGBoost on full dataset
+- [ ] Train Extra Trees on full dataset
+- [ ] Train deep neural network on full dataset
+- [ ] Build stacked ensemble (optional)
+- [ ] Evaluate on held-out test set
+
+### Phase 6: Deployment & Analysis
+- [ ] Model evaluation and performance metrics
+- [ ] Feature importance analysis
+- [ ] Decision visualization
+- [ ] Documentation of results
 
 ## 🤝 Contributing
 

@@ -14,10 +14,10 @@ class JungleNet(nn.Module):
     Neural network for predicting jungle decisions.
 
     Input: State vector (71 dims)
-    Output: Logits over 17 camps
+    Output: Logits over 20 actions (17 camps + 3 ganks)
     """
 
-    def __init__(self, state_dim: int = 71, action_dim: int = 17, hidden_dim: int = 128):
+    def __init__(self, state_dim: int = 71, action_dim: int = 20, hidden_dim: int = 128):
         super().__init__()
 
         self.network = nn.Sequential(

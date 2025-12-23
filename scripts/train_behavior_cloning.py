@@ -54,8 +54,8 @@ def evaluate(model, dataloader, criterion, device, compute_topk=False):
     model.eval()
     total_loss = 0
     correct = 0
+    correct_top2 = 0
     correct_top3 = 0
-    correct_top5 = 0
     total = 0
 
     with torch.no_grad():
@@ -73,13 +73,13 @@ def evaluate(model, dataloader, criterion, device, compute_topk=False):
             correct += (predictions == actions).sum().item()
 
             if compute_topk:
+                # Top-2 accuracy
+                top2_preds = torch.topk(logits, k=2, dim=1).indices
+                correct_top2 += (top2_preds == actions.unsqueeze(1)).any(dim=1).sum().item()
+
                 # Top-3 accuracy
                 top3_preds = torch.topk(logits, k=3, dim=1).indices
                 correct_top3 += (top3_preds == actions.unsqueeze(1)).any(dim=1).sum().item()
-
-                # Top-5 accuracy
-                top5_preds = torch.topk(logits, k=5, dim=1).indices
-                correct_top5 += (top5_preds == actions.unsqueeze(1)).any(dim=1).sum().item()
 
             total += actions.size(0)
 
@@ -87,9 +87,9 @@ def evaluate(model, dataloader, criterion, device, compute_topk=False):
     accuracy = correct / total
 
     if compute_topk:
+        top2_acc = correct_top2 / total
         top3_acc = correct_top3 / total
-        top5_acc = correct_top5 / total
-        return avg_loss, accuracy, top3_acc, top5_acc
+        return avg_loss, accuracy, top2_acc, top3_acc
 
     return avg_loss, accuracy
 
@@ -104,23 +104,57 @@ def main():
     states = np.load(data_dir / "states.npy")
     actions = np.load(data_dir / "actions.npy")
 
-    print(f"\nDataset:")
-    print(f"  Examples: {len(states)}")
-    print(f"  State dim: {states.shape[1]}")
-    print(f"  Actions: {len(np.unique(actions))}")
+    # Load game indices to enable game-based splitting
+    game_indices_file = data_dir / "game_indices.npy"
+    if game_indices_file.exists():
+        game_indices = np.load(game_indices_file)
+        print(f"\nDataset:")
+        print(f"  Examples: {len(states)}")
+        print(f"  State dim: {states.shape[1]}")
+        print(f"  Actions: {len(np.unique(actions))}")
+        print(f"  Games: {len(np.unique(game_indices))}")
 
-    # Train/val split
-    n_train = int(0.8 * len(states))
-    indices = np.random.permutation(len(states))
+        # Train/val split by GAMES (not individual states)
+        unique_games = np.unique(game_indices)
+        n_train_games = int(0.8 * len(unique_games))
 
-    train_states = states[indices[:n_train]]
-    train_actions = actions[indices[:n_train]]
-    val_states = states[indices[n_train:]]
-    val_actions = actions[indices[n_train:]]
+        # Shuffle games
+        shuffled_games = np.random.permutation(unique_games)
+        train_games = shuffled_games[:n_train_games]
+        val_games = shuffled_games[n_train_games:]
 
-    print(f"\nSplit:")
-    print(f"  Train: {len(train_states)}")
-    print(f"  Val: {len(val_states)}")
+        # Get state indices for each split
+        train_mask = np.isin(game_indices, train_games)
+        val_mask = np.isin(game_indices, val_games)
+
+        train_states = states[train_mask]
+        train_actions = actions[train_mask]
+        val_states = states[val_mask]
+        val_actions = actions[val_mask]
+
+        print(f"\nSplit (by whole games):")
+        print(f"  Train: {len(train_states)} states from {len(train_games)} games")
+        print(f"  Val: {len(val_states)} states from {len(val_games)} games")
+    else:
+        # Fallback to old random split if game_indices.npy doesn't exist
+        print(f"\nWARNING: game_indices.npy not found, using random split")
+        print(f"  This will leak game data between train/val!")
+        print(f"\nDataset:")
+        print(f"  Examples: {len(states)}")
+        print(f"  State dim: {states.shape[1]}")
+        print(f"  Actions: {len(np.unique(actions))}")
+
+        n_train = int(0.8 * len(states))
+        indices = np.random.permutation(len(states))
+
+        train_states = states[indices[:n_train]]
+        train_actions = actions[indices[:n_train]]
+        val_states = states[indices[n_train:]]
+        val_actions = actions[indices[n_train:]]
+
+        print(f"\nSplit:")
+        print(f"  Train: {len(train_states)}")
+        print(f"  Val: {len(val_states)}")
 
     # Create dataloaders
     train_dataset = TensorDataset(
@@ -189,38 +223,14 @@ def main():
     model.load_state_dict(checkpoint['model_state_dict'])
 
     # Evaluate with top-k metrics
-    val_loss, val_acc, top3_acc, top5_acc = evaluate(
+    val_loss, val_acc, top2_acc, top3_acc = evaluate(
         model, val_loader, criterion, device, compute_topk=True
     )
 
-    print(f"\nAccuracy Metrics:")
-    print(f"  Top-1 (exact):  {val_acc:.3f} ({val_acc*100:.1f}%)")
-    print(f"  Top-3:          {top3_acc:.3f} ({top3_acc*100:.1f}%)")
-    print(f"  Top-5:          {top5_acc:.3f} ({top5_acc*100:.1f}%)")
-    print(f"  Random baseline: 0.063 (6.3%)")
-
-    # Evaluate on full validation set for detailed analysis
-    model.eval()
-    all_predictions = []
-    all_true = []
-
-    with torch.no_grad():
-        for states_batch, actions_batch in val_loader:
-            states_batch = states_batch.to(device)
-            logits = model(states_batch)
-            predictions = torch.argmax(logits, dim=1)
-            all_predictions.extend(predictions.cpu().numpy())
-            all_true.extend(actions_batch.numpy())
-
-    # Show confusion for top camps
-    print("\nTop predicted camps:")
-    pred_counts = {}
-    for pred in all_predictions:
-        camp = ALL_CAMPS[pred]
-        pred_counts[camp] = pred_counts.get(camp, 0) + 1
-
-    for camp, count in sorted(pred_counts.items(), key=lambda x: -x[1])[:10]:
-        print(f"  {camp:<20}: {count:>3}")
+    print(f"\nFinal Accuracy Metrics:")
+    print(f"  Top-1: {val_acc*100:.1f}%")
+    print(f"  Top-2: {top2_acc*100:.1f}%")
+    print(f"  Top-3: {top3_acc*100:.1f}%")
 
     print(f"\n{'='*70}")
 

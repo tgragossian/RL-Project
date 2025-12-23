@@ -1,8 +1,10 @@
-# Project Cleanup Summary
+# Project Status - Screenshot Pipeline Migration
 
-## ✅ Cleanup Completed
+## 🔄 Major Strategy Change (December 2024)
 
-Successfully organized and cleaned up the RL Project codebase for Git push.
+**Migration from Riot API → Screenshot-based CV collection**
+
+Successfully pivoted data collection strategy to automated replay screenshot extraction for complete game state capture.
 
 ## 📁 Final Project Structure
 
@@ -103,22 +105,77 @@ git commit -m "Clean up project structure with comprehensive documentation"
 git push origin main         # Push to remote
 ```
 
-## 🎯 Project Status
+## 🎯 Current Project Status
 
-**Phase**: Data Collection Planning
-**Next Major Task**: Set up Riot API data pipeline
-**Documentation**: Complete ✅
-**Code Quality**: Production-ready ✅
+**Phase**: Screenshot Pipeline Development
+**Next Major Task**: Build automated replay navigation + CV extraction
+**Documentation**: Updated ✅
+**Code Quality**: Simulation ready, CV pipeline in development
 **Git Ready**: Yes ✅
 
-## 📝 Notes
+## 📋 Updated Strategy Summary
 
-- All simulation code is well-documented and ready for use
-- Data collection strategy is documented in `docs/data_collection_options.md`
-- Project is ready for collaborative development
-- No secrets or credentials in repository
+### What Changed
+- **Old**: Riot API with 60s intervals, limited data
+- **New**: Screenshot-based with 5s intervals, complete game state
+
+### Why
+- API missing critical data (fog of war, cooldowns, health/mana, exact positions)
+- Screenshots capture everything visible on screen
+- Better temporal resolution (5s vs 60s)
+- Fog of war tracking enables realistic decision modeling
+
+### Storage Solution
+- Partition-based processing (100 games per partition)
+- Delete images immediately after CV extraction
+- Peak storage: 180 GB (temporary during partition)
+- Final storage: ~1 GB (CSVs + models)
+
+### Training Approach
+- Accumulate CSVs across K partitions
+- Use partitions as natural K-fold CV splits for hyperparameter tuning
+- Train final unified model on all 500 games (1.8M examples)
+- Models: XGBoost, Extra Trees, LightGBM, Deep NN, Stacked Ensemble
+
+## 📝 Documentation
+
+- **Main README**: Updated with new pipeline ✅
+- **Screenshot Pipeline Guide**: [docs/screenshot_pipeline.md](docs/screenshot_pipeline.md) ✅
+- **Original API Analysis**: [docs/data_collection_options.md](docs/data_collection_options.md) (archived)
+- **Data Collection Summary**: Updated ✅
+- **Requirements**: Updated with CV/ML dependencies ✅
+
+## 🚀 Next Implementation Steps
+
+1. **Proof of Concept** (1-2 days)
+   - Build replay automation (pyautogui)
+   - Test on single game
+   - Validate CV extraction accuracy
+
+2. **CV Pipeline** (1 week)
+   - Champion position detection
+   - Item/stats extraction
+   - Health/mana/cooldown tracking
+
+3. **Partition System** (2-3 days)
+   - Partition manager implementation
+   - CSV schema definition
+   - Processing pipeline
+
+4. **Data Collection** (7-10 days)
+   - Collect 5 partitions × 100 games
+   - Process in parallel with collection
+   - Merge CSVs
+
+5. **Model Training** (3-5 days)
+   - Hyperparameter tuning (Optuna)
+   - Train final models
+   - Evaluation
+
+**Total Estimated Timeline**: ~3-4 weeks
 
 ---
 
-**Project cleaned up on**: 2025-12-05
-**Ready for Git push**: ✅ YES
+**Project updated on**: 2024-12-22
+**Ready for implementation**: ✅ YES
+**No code changes yet**: Documentation only
